@@ -282,6 +282,16 @@ require("lazy").setup({
     end,
   },
 
+  -- Markdown rendering in buffer (styled headings, code blocks, tables, etc.)
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    ft = { "markdown" },
+    dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+    config = function()
+      require("render-markdown").setup()
+    end,
+  },
+
   -- Git workflow (status, commit, push, log, blame, diff, ...)
   {
     "tpope/vim-fugitive",

@@ -48,6 +48,7 @@ The script installs Homebrew (if missing), Neovim, ripgrep, fd, Ghostty, and Jet
 | Completion | nvim-cmp + LuaSnip + friendly-snippets |
 | Git | gitsigns (hunks), vim-fugitive (status, commit, push) |
 | Languages | rustaceanvim (Rust), go.nvim (Go) |
+| Markdown | render-markdown.nvim (styled in-buffer preview) |
 
 ### Ghostty
 
