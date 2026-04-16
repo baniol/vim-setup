@@ -34,14 +34,8 @@ vim.keymap.set("n", "<leader>sh", function()
   vim.cmd("startinsert")
 end, { desc = "Open terminal in bottom split" })
 
--- Exit terminal mode with Esc (skip Sidekick CLI buffers so Claude Code receives Esc)
-vim.keymap.set("t", "<Esc>", function()
-  local buf_name = vim.api.nvim_buf_get_name(0)
-  if buf_name:find("sidekick://") then
-    return "<Esc>"
-  end
-  return [[<C-\><C-n>]]
-end, { expr = true, desc = "Exit terminal mode" })
+-- Exit terminal mode with double Esc; single Esc passes through to the running app (e.g. Claude Code)
+vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]], { desc = "Exit terminal mode" })
 
 -- Auto-close terminal window when the shell exits cleanly
 vim.api.nvim_create_autocmd("TermClose", {
@@ -70,6 +64,76 @@ vim.g.rustaceanvim = {
     },
   },
 }
+
+-- Theme switcher (nvim + Ghostty in sync)
+local THEME_MAP = {
+  ["tokyonight-night"]     = "TokyoNight Night",
+  ["tokyonight-storm"]     = "TokyoNight Storm",
+  ["tokyonight-moon"]      = "TokyoNight Moon",
+  ["tokyonight-day"]       = "TokyoNight Day",
+  ["catppuccin-mocha"]     = "Catppuccin Mocha",
+  ["catppuccin-latte"]     = "Catppuccin Latte",
+  ["catppuccin-frappe"]    = "Catppuccin Frappe",
+  ["catppuccin-macchiato"] = "Catppuccin Macchiato",
+  ["kanagawa"]             = "Kanagawa Wave",
+  ["kanagawa-dragon"]      = "Kanagawa Dragon",
+  ["kanagawa-lotus"]       = "Kanagawa Lotus",
+  ["rose-pine"]            = "Rose Pine",
+  ["rose-pine-moon"]       = "Rose Pine Moon",
+  ["rose-pine-dawn"]       = "Rose Pine Dawn",
+  ["gruvbox-material"]     = "Gruvbox Material",
+  ["nightfox"]             = "Nightfox",
+  ["dayfox"]               = "Dayfox",
+  ["carbonfox"]            = "Carbonfox",
+  ["nordfox"]              = "Nordfox",
+}
+
+local function apply_theme(nvim_name)
+  local ghostty_name = THEME_MAP[nvim_name]
+  if not ghostty_name then return end
+  vim.cmd("colorscheme " .. nvim_name)
+  local cfg = vim.fn.expand("~/.config/ghostty/config")
+  vim.fn.system({ "sed", "-i", "", "s/^theme = .*/theme = " .. ghostty_name .. "/", cfg })
+  vim.fn.jobstart({ "ghostty", "+reload-config" }, { detach = true })
+end
+
+vim.keymap.set("n", "<leader>ft", function()
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local conf    = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local state   = require("telescope.actions.state")
+
+  local names = vim.tbl_keys(THEME_MAP)
+  table.sort(names)
+  local original = vim.g.colors_name
+
+  pickers.new({}, {
+    prompt_title = "Themes",
+    finder       = finders.new_table({ results = names }),
+    sorter       = conf.generic_sorter({}),
+    previewer    = false,
+    attach_mappings = function(buf, map)
+      vim.api.nvim_create_autocmd("CursorMoved", {
+        buffer = buf,
+        callback = function()
+          local entry = state.get_selected_entry()
+          if entry then pcall(vim.cmd, "colorscheme " .. entry.value) end
+        end,
+      })
+      actions.select_default:replace(function()
+        local entry = state.get_selected_entry()
+        actions.close(buf)
+        if entry then apply_theme(entry.value) end
+      end)
+      map({ "i", "n" }, "<Esc>", function()
+        actions.close(buf)
+        if original then pcall(vim.cmd, "colorscheme " .. original) end
+      end)
+      return true
+    end,
+  }):find()
+end, { desc = "Pick theme (nvim + Ghostty)" })
 
 -- Plugins
 require("lazy").setup({

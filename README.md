@@ -41,7 +41,7 @@ The script installs Homebrew (if missing), Neovim, ripgrep, fd, Ghostty, and Jet
 
 | Category | Plugins |
 |----------|---------|
-| Theme | tokyonight-night, lualine |
+| Theme | tokyonight, catppuccin, kanagawa, rose-pine, nightfox, gruvbox-material |
 | Navigation | Telescope (fuzzy finder), nvim-tree (file explorer) |
 | Editing | treesitter, autopairs, Comment.nvim |
 | LSP | mason + lspconfig (gopls, lua_ls, rust_analyzer, pyright) |
@@ -64,10 +64,28 @@ The script installs Homebrew (if missing), Neovim, ripgrep, fd, Ghostty, and Jet
 
 Leader = `Space`
 
+### Theme Switching
+
+`<leader>ft` opens a Telescope picker with themes that are available in both Neovim and Ghostty. Moving the cursor previews the theme live in Neovim; pressing Enter applies it to both Neovim and Ghostty simultaneously. Pressing Esc cancels and restores the previous theme.
+
+Available paired themes:
+
+| Neovim colorscheme | Ghostty theme |
+|---|---|
+| `tokyonight-night` / `storm` / `moon` / `day` | TokyoNight Night / Storm / Moon / Day |
+| `catppuccin-mocha` / `latte` / `frappe` / `macchiato` | Catppuccin Mocha / Latte / Frappe / Macchiato |
+| `kanagawa` / `kanagawa-dragon` / `kanagawa-lotus` | Kanagawa Wave / Dragon / Lotus |
+| `rose-pine` / `rose-pine-moon` / `rose-pine-dawn` | Rose Pine / Moon / Dawn |
+| `gruvbox-material` | Gruvbox Material |
+| `nightfox` / `dayfox` / `carbonfox` / `nordfox` | Nightfox / Dayfox / Carbonfox / Nordfox |
+
+Ghostty config is updated at `~/.config/ghostty/config` and reloaded automatically via `Cmd+Shift+,`.
+
 ### General
 
 | Shortcut | Action |
 |----------|--------|
+| `Space ft` | Pick theme (Neovim + Ghostty) |
 | `Space t` | Toggle file tree |
 | `Space ff` | Find files |
 | `Space fg` | Live grep |
