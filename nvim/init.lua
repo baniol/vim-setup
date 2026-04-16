@@ -28,6 +28,38 @@ vim.keymap.set("n", "<leader>q", ":cclose<CR>:lclose<CR>", { desc = "Close quick
 -- Copy absolute file path to system clipboard
 vim.keymap.set("n", "<leader>cp", function() vim.fn.setreg("+", vim.fn.expand("%:p")) end, { desc = "Copy file path" })
 
+-- Open terminal in bottom split
+vim.keymap.set("n", "<leader>sh", function()
+  vim.cmd("belowright split | resize 15 | terminal")
+  vim.cmd("startinsert")
+end, { desc = "Open terminal in bottom split" })
+
+-- Exit terminal mode with Esc (skip Sidekick CLI buffers so Claude Code receives Esc)
+vim.keymap.set("t", "<Esc>", function()
+  local buf_name = vim.api.nvim_buf_get_name(0)
+  if buf_name:find("sidekick://") then
+    return "<Esc>"
+  end
+  return [[<C-\><C-n>]]
+end, { expr = true, desc = "Exit terminal mode" })
+
+-- Auto-close terminal window when the shell exits cleanly
+vim.api.nvim_create_autocmd("TermClose", {
+  callback = function(args)
+    if vim.v.event.status ~= 0 then return end
+    vim.schedule(function()
+      for _, win in ipairs(vim.fn.win_findbuf(args.buf)) do
+        if vim.api.nvim_win_is_valid(win) then
+          pcall(vim.api.nvim_win_close, win, true)
+        end
+      end
+      if vim.api.nvim_buf_is_valid(args.buf) then
+        pcall(vim.api.nvim_buf_delete, args.buf, { force = true })
+      end
+    end)
+  end,
+})
+
 -- rustaceanvim: must be set before lazy loads the plugin
 vim.g.rustaceanvim = {
   server = {
@@ -41,7 +73,7 @@ vim.g.rustaceanvim = {
 
 -- Plugins
 require("lazy").setup({
-  -- Colorscheme
+  -- Colorschemes (switch live with :Telescope colorscheme)
   {
     "folke/tokyonight.nvim",
     lazy = false,
@@ -50,13 +82,23 @@ require("lazy").setup({
       vim.cmd("colorscheme tokyonight-night")
     end,
   },
+  { "catppuccin/nvim", name = "catppuccin" },
+  { "rebelot/kanagawa.nvim" },
+  { "EdenEast/nightfox.nvim" },
+  { "rose-pine/neovim", name = "rose-pine" },
+  { "sainnhe/gruvbox-material" },
 
   -- Status line
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
-      require("lualine").setup({ options = { theme = "tokyonight" } })
+      require("lualine").setup({
+        options = { theme = "tokyonight" },
+        tabline = {
+          lualine_a = { { "tabs", mode = 2, max_length = vim.o.columns } },
+        },
+      })
     end,
   },
 
@@ -66,13 +108,24 @@ require("lazy").setup({
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
       require("nvim-tree").setup({
+        view = { width = 50 },
+        sync_root_with_cwd = true,
+        respect_buf_cwd = true,
+        update_focused_file = {
+          enable = true,
+          update_root = false,
+        },
         actions = {
           open_file = {
             quit_on_open = false,
           },
+          change_dir = {
+            global = false,
+          },
         },
       })
-      vim.keymap.set("n", "<leader>t", ":NvimTreeToggle<CR>", { desc = "Toggle file tree" })
+      vim.keymap.set("n", "<leader>t",  ":NvimTreeToggle<CR>",   { desc = "Toggle file tree" })
+      vim.keymap.set("n", "<leader>tr", ":NvimTreeFindFile<CR>", { desc = "Reveal file in tree" })
 
       -- Auto-close nvim-tree if it's the last window
       vim.api.nvim_create_autocmd("QuitPre", {
@@ -303,6 +356,39 @@ require("lazy").setup({
       { "<leader>gp", "<cmd>Git push<CR>",     desc = "Git push" },
       { "<leader>gl", "<cmd>Git log<CR>",      desc = "Git log" },
       { "<leader>gd", "<cmd>Gdiffsplit<CR>",   desc = "Git diff split" },
+    },
+  },
+
+  -- AI CLI integration (Claude Code via subscription)
+  {
+    "folke/sidekick.nvim",
+    opts = {
+      nes = { enabled = false }, -- Next Edit Suggestions require Copilot; disabled
+      cli = {
+        watch = true, -- auto-reload buffers when the CLI edits files
+        win = {
+          split = { width = 110 },
+        },
+        tools = {
+          claude = {},
+        },
+        prompts = {
+          explain  = "Explain {this}",
+          fix      = "Can you fix {this}?",
+          tests    = "Can you write tests for {this}?",
+          document = "Add documentation to {function|line}",
+          review   = "Can you review {file} for any issues?",
+          optimize = "How can {this} be optimized?",
+          diag     = "Fix the diagnostics in this file: {diagnostics}",
+        },
+      },
+    },
+    keys = {
+      { "<leader>ac", function() require("sidekick.cli").toggle({ name = "claude", focus = true }) end, desc = "Toggle Claude" },
+      { "<leader>aa", function() require("sidekick.cli").toggle() end,                                  desc = "Toggle Sidekick CLI" },
+      { "<leader>ap", function() require("sidekick.cli").prompt() end,                                  desc = "Sidekick prompt" },
+      { "<leader>as", function() require("sidekick.cli").send({ msg = "{this}" }) end, mode = { "n", "x" }, desc = "Send selection/context to CLI" },
+      { "<C-.>",      function() require("sidekick.cli").focus() end, mode = { "n", "t", "i", "x" },     desc = "Focus Sidekick CLI" },
     },
   },
 })

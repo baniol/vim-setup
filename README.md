@@ -74,6 +74,8 @@ Leader = `Space`
 | `Space fb` | Buffers |
 | `Space q` | Close quickfix/loclist |
 | `Space cp` | Copy file path to clipboard |
+| `Space sh` | Open terminal in bottom split |
+| `Esc` (in terminal) | Exit terminal mode to normal |
 
 ### LSP (active when server attaches)
 
